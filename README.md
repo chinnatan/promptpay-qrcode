@@ -28,7 +28,8 @@ bun add promptpay-qrcode
 ```
 
 ส่วนหลัก **ไม่มี dependency** ส่วนสร้างรูปภาพใช้ peer dependency แบบไม่บังคับคือ
-`qrcode` (ติดตั้งเฉพาะเมื่อต้องการรูปภาพ)
+`qrcode` (ติดตั้งเฉพาะเมื่อต้องการรูปภาพ) — ตัวไลบรารีเขียนด้วย TypeScript
+มี `.d.ts` แนบมาในแพ็กเกจทุกฟังก์ชัน
 
 ```js
 const { generatePromptPay, generateBillPayment, generateKShopQR } = require('promptpay-qrcode');
@@ -237,12 +238,12 @@ round-trip ผ่าน `generatePromptPay` ได้ `detach` รับทั�
 ## CLI
 
 มี command-line inspector ขนาดเล็กแนบมากับแพ็กเกจ (`promptpay-qr` หรือ
-`bun cli.js` จากใน repo) มัน decode payload, ตรวจสอบ CRC และแสดงการแยก
+`bun src/cli.ts` จากใน repo) มัน decode payload, ตรวจสอบ CRC และแสดงการแยก
 account/transaction พร้อม tag dump — ทั้งหมดรันในเครื่อง ไม่มีข้อมูลใดออกจากเครื่องคุณ
 
 ```
 # จากใน repo
-bun cli.js '0002010101021130...C9ED'
+bun src/cli.ts '0002010101021130...C9ED'
 bun run decode -- '00020101...'           # ผ่าน bun script
 
 # ติดตั้งแบบ global (bun add -g promptpay-qrcode)
@@ -301,7 +302,7 @@ console.log(await toTerminal(payload));                      // QR สแกน�
 ```
 
 อาร์กิวเมนต์ `options` ตัวที่สองถูกส่งต่อไปยัง `qrcode` ตรง ๆ
-(`width`, `margin`, `color`, `errorCorrectionLevel`, …) ดู `example-image.js`
+(`width`, `margin`, `color`, `errorCorrectionLevel`, …) ดู `src-test/example-image.ts`
 (`bun run example:image`) สำหรับเดโมเต็ม
 
 ## API
@@ -328,21 +329,25 @@ console.log(await toTerminal(payload));                      // QR สแกน�
 
 ## ไฟล์
 
-- `crc.js` — CRC16-CCITT (init 0xFFFF, poly 0x1021)
-- `promptpay.js` — ตัวสร้าง PromptPay มาตรฐาน (Tag 29) + bill payment (Tag 30)
-- `kshop.js` — ตัวสร้าง KShop (ปรับตั้งค่าได้ ไม่แนบข้อมูลร้านค้า)
-- `decode.js` — decode/parse payload + ตัวดึง `kshopParamsFrom`
-- `image.js` — helper รูปภาพแบบไม่บังคับ (lazy-load `qrcode`)
-- `cli.js` — command-line inspector (`promptpay-qr` / `bun run decode`)
-- `index.js` — public entry point
-- `test.js` — `bun test.js` `example.js` — `bun run example`
-  `example-image.js` — `bun run example:image` (ต้องมี `qrcode`)
+- `src/crc.ts` — CRC16-CCITT (init 0xFFFF, poly 0x1021)
+- `src/promptpay.ts` — ตัวสร้าง PromptPay มาตรฐาน (Tag 29) + bill payment (Tag 30)
+- `src/kshop.ts` — ตัวสร้าง KShop (ปรับตั้งค่าได้ ไม่แนบข้อมูลร้านค้า)
+- `src/decode.ts` — decode/parse payload + ตัวดึง `kshopParamsFrom`
+- `src/image.ts` — helper รูปภาพแบบไม่บังคับ (lazy-load `qrcode`)
+- `src/cli.ts` — command-line inspector (`promptpay-qr` / `bun run decode`)
+- `src/index.ts` — public entry point
+- `src-test/test.ts` — `bun run test` `src-test/example.ts` — `bun run example`
+  `src-test/example-image.ts` — `bun run example:image` (ต้องมี `qrcode`)
+- `golden.json` — baseline payload จากเวอร์ชัน JS ก่อนย้ายเป็น TypeScript (ใช้เทียบ byte-for-byte)
+- `dist/` — ไฟล์ CJS + `.d.ts` ที่ build ด้วย `bun run build` (ไม่ commit)
 - `docs/promptpay-qr-structure.md` — อ้างอิงโครงสร้าง tag EMVCo / Thai QR
 
 ## Tests
 
 ```
-bun test.js
+bun run test        # src-test/test.ts รันบน Bun ตรง ๆ ไม่ต้อง build
+bun run typecheck   # tsc -p src-test --noEmit
+bun run build       # emit dist/ CJS + .d.ts
 ```
 
 (_อย่าใช้ `bun test` เฉย ๆ — harness ใน repo เป็น `check()` แบบ custom
