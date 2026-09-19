@@ -1,7 +1,7 @@
 'use strict';
 
 // Image-generation example. Requires the optional `qrcode` package:
-//   npm install qrcode
+//   bun add qrcode
 // Run with:  npm run example:image
 
 const {

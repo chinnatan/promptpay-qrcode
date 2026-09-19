@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 'use strict';
 
 // Tiny CLI to inspect a PromptPay / Thai QR payload locally.
 //
-//   node cli.js <payload>          decode + detach a payload string
-//   node cli.js --json <payload>   print the raw JSON result
-//   echo "<payload>" | node cli.js read payload from stdin
+//   bun cli.js <payload>          decode + detach a payload string
+//   bun cli.js --json <payload>   print the raw JSON result
+//   echo "<payload>" | bun cli.js read payload from stdin
 //
 // Nothing leaves your machine.
 
@@ -47,7 +47,7 @@ function main() {
   const payload = readInput();
 
   if (!payload) {
-    console.error('Usage: node cli.js [--json] <payload>   (or pipe the payload via stdin)');
+    console.error('Usage: bun cli.js [--json] <payload>   (or pipe the payload via stdin)');
     process.exit(2);
   }
 
