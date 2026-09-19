@@ -1,159 +1,164 @@
 # promptpay-qrcode
 
-Zero-dependency Node.js generator for **PromptPay QR payload strings** (the
-EMVCo / Thai QR text you encode into a QR image). Three generators plus a
-decoder:
+ไลบรารี Node.js แบบไม่มี dependency สำหรับสร้าง **payload string ของ QR PromptPay**
+(ข้อความ EMVCo / Thai QR ที่ต้องเอาไป encode เป็นรูปภาพ QR) มีตัวสร้าง 3 ตัว
+พร้อม decoder:
 
-1. **Standard PromptPay** (Tag 29) — mobile number, national/tax ID, or
-   e-wallet ID, inspired by [saladpuk/PromptPay](https://github.com/saladpuk/PromptPay).
-2. **Bill Payment** (Tag 30) — biller ID + reference(s). The merchant
-   "bill payment" QR family, the same shape SCB's **แม่มณี (Mae Manee)** and
-   similar merchant QRs use (the payer's app shows the shop name).
-3. **KShop** — the KShop-format merchant QR (Tag 30 + Tag 31). You supply the
-   account-identifying fields; the library ships no merchant data.
+1. **PromptPay มาตรฐาน** (Tag 29) — หมายเลขโทรศัพท์, บัตรประชาชน/เลขผู้เสียภาษี
+   หรือ e-wallet ID ได้แรงบันดาลใจจาก
+   [saladpuk/PromptPay](https://github.com/saladpuk/PromptPay)
+2. **Bill Payment** (Tag 30) — Biller ID + reference จำนวน QR กลุ่ม
+   "bill payment" ของร้านค้า รูปร่างเดียวกับที่ QR ของ **แม่มณี (Mae Manee)** ของ SCB
+   และ QRร้านค้าที่ลักษณะใกล้เคียงกันใช้ (แอปฝั่งผู้จ่ายเงินจะแสดงชื่อร้านค้า)
+3. **KShop** — QRร้านค้ารูปแบบ KShop (Tag 30 + Tag 31) คุณต้องระบุ field
+   ที่ระบุตัวตนบัญชีด้วยเอง ห้องสมุดไม่แนบข้อมูลร้านค้าใด ๆ มาให้
 
-Plus `decode()` to read any PromptPay/Thai QR back into structured fields.
+พร้อม `decode()` สำหรับอ่าน QR PromptPay/Thai QR กลับเป็น field แบบมีโครงสร้าง
 
-See [`docs/promptpay-qr-structure.md`](docs/promptpay-qr-structure.md) for a
-deep dive on the EMVCo / Thai QR tag structure.
+ดู [`docs/promptpay-qr-structure.md`](docs/promptpay-qr-structure.md) สำหรับ
+คำอธิบายเจาะลึกโครงสร้าง tag ของ EMVCo / Thai QR
 
-Output is the **payload string only** — pass it to any QR library, or use the
-optional built-in image helpers (see [Rendering to an image](#rendering-to-an-image-optional)).
+ผลลัพธ์คือ **payload string เท่านั้น** — ส่งต่อไปยังไลบรารี QR ใดก็ได้
+หรือใช้ helper สร้างรูปภาพที่มีมาให้ (ดู [สร้างเป็นรูปภาพ](#สร้างเป็นรูปภาพ-ไม่บังคับ))
 
-## Install
+## ติดตั้ง
 
 ```
 npm install promptpay-qrcode
 ```
 
-The core has **no dependencies**. Image rendering uses the optional `qrcode`
-peer dependency (install it only if you need images).
+ส่วนหลัก **ไม่มี dependency** ส่วนสร้างรูปภาพใช้ peer dependency แบบไม่บังคับคือ
+`qrcode` (ติดตั้งเฉพาะเมื่อต้องการรูปภาพ)
 
 ```js
 const { generatePromptPay, generateBillPayment, generateKShopQR } = require('promptpay-qrcode');
 ```
 
-## Standard PromptPay (Tag 29)
+## PromptPay มาตรฐาน (Tag 29)
 
 ```js
-generatePromptPay({ mobile: '0812345678' });              // static (no amount)
-generatePromptPay({ mobile: '0812345678', amount: 100 }); // dynamic, 100.00 THB
+generatePromptPay({ mobile: '0812345678' });              // static (ไม่มีจำนวนเงิน)
+generatePromptPay({ mobile: '0812345678', amount: 100 }); // dynamic, 100.00 บาท
 generatePromptPay({ nationalId: '1234567890123' });
 generatePromptPay({ ewallet: '123456789012345', amount: 50.25 });
 ```
 
-Provide **exactly one** of `mobile`, `nationalId`, `ewallet`. By default the QR
-is dynamic (POI `12`) when `amount` is present and static (POI `11`) otherwise.
-Pass `dynamic: true | false` to force it either way:
+ระบุ `mobile`, `nationalId` หรือ `ewallet` **อย่างใดอย่างหนึ่งเท่านั้น** โดยค่า
+เริ่มต้น QR จะเป็น dynamic (POI `12`) เมื่อระบุ `amount` และเป็น static (POI `11`)
+เมื่อไม่ระบุ ส่ง `dynamic: true | false` เพื่อบังคับแบบใดแบบหนึ่ง:
 
 ```js
-generatePromptPay({ mobile: '0812345678', amount: 100, dynamic: false }); // static w/ amount
-generatePromptPay({ mobile: '0812345678', dynamic: true });               // dynamic w/o amount
+generatePromptPay({ mobile: '0812345678', amount: 100, dynamic: false }); // static พร้อมจำนวนเงิน
+generatePromptPay({ mobile: '0812345678', dynamic: true });               // dynamic โดยไม่มีจำนวนเงิน
 ```
 
-Mobile numbers are normalized to the 13-char proxy form
-(`0812345678` → `0066812345678`).
+หมายเลขโทรศัพท์จะถูก normalize เป็นรูป proxy 13 ตัวอักษร
+(`0812345678` → `0066812345678`)
 
-## Bill Payment (Tag 30) — Mae Manee / SCB merchant style
+## Bill Payment (Tag 30) — สไตล์แม่มณี / QRร้านค้า SCB
 
 ```js
 generateBillPayment({
-  billerId: '000000000000000', // bank-issued Biller ID (usually 15 digits)
-  ref1: 'INV20240001',         // Reference 1 (mandatory)
-  ref2: 'BRANCH01',            // Reference 2 (optional)
-  amount: 50,                  // optional; present => dynamic QR (POI 12) by default
-  dynamic: true,               // optional; force POI (true='12', false='11')
-  merchantName: 'MY SHOP',     // optional (tag 59)
-  merchantCity: 'BANGKOK',     // optional (tag 60)
-  additionalData: '07160000…', // optional raw tag 62 (e.g. terminal label sub-TLV)
-  countryCode: 'TH',           // optional (tag 58, default 'TH')
+  billerId: '000000000000000', // Biller ID จากธนาคาร (มักเป็น 15 หลัก)
+  ref1: 'INV20240001',         // Reference 1 (บังคับ)
+  ref2: 'BRANCH01',            // Reference 2 (ไม่บังคับ)
+  amount: 50,                  // ไม่บังคับ; ระบุ => เป็น dynamic QR (POI 12) ตามค่าเริ่มต้น
+  dynamic: true,               // ไม่บังคับ; บังคับค่า POI (true='12', false='11')
+  merchantName: 'MY SHOP',     // ไม่บังคับ (tag 59)
+  merchantCity: 'BANGKOK',     // ไม่บังคับ (tag 60)
+  additionalData: '07160000…', // ไม่บังคับ raw tag 62 (เช่น sub-TLV ของ label เครื่อง)
+  countryCode: 'TH',           // ไม่บังคับ (tag 58, ค่าเริ่มต้น 'TH')
 });
 ```
 
-Tag order matches real Thai bill-payment QRs (`00,01,30,58,53,…,62,63` — note
-`58` before `53`), so a decoded bill-payment QR round-trips **byte-for-byte**:
-`generateBillPayment({ ...account, ...transaction })` from a `detach()` of an
-SCB/Mae Manee QR reproduces the original exactly (including its tag-62 terminal
-label).
+ลำดับ tag ตรงกับ QR bill payment ที่ใช้จริงในไทย (`00,01,30,58,53,…,62,63` —
+สังเกตว่า `58` มาก่อน `53`) ทำให้ QR bill payment ที่ decode แล้ว
+round-trip กลับได้ **ตรงกันทุกไบต์**:
+`generateBillPayment({ ...account, ...transaction })` จากผลของ `detach()` ของ QR
+SCB/แม่มณี จะสร้าง payload เดิมกลับมาได้เหมือนกันเป๊ะ (รวม tag-62 terminal label
+ของมันด้วย)
 
-The Biller ID and references are issued/defined by your bank (for SCB, via the
-Mae Manee / Business QR onboarding). `ref1` is required; `ref2` is optional.
+Biller ID และ reference ออกให้/กำหนดโดยธนาคารของคุณ (สำหรับ SCB คือ แม่มณี /
+Business QR) `ref1` จำเป็นต้องใส่; `ref2` ไม่บังคับ
 
 ## KShop
 
-The KShop-format merchant QR (Tag 30 + Tag 31). This library ships **no
-merchant data** — you must supply the account-identifying fields, which your
-bank issues. `billerId`, `merchantRef`, `merchantName` and `merchantCity` are
-required; `generateKShopQR` throws if any are missing.
+QRร้านค้ารูปแบบ KShop (Tag 30 + Tag 31) ไลบรารีนี้ **ไม่แนบข้อมูลร้านค้าใด ๆ**
+คุณต้องระบุ field ที่ใช้ระบุตัวตนบัญชีด้วยเอง ซึ่งธนาคารจะเป็นผู้ออกให้
+`billerId`, `merchantRef`, `merchantName` และ `merchantCity` เป็นค่าบังคับ
+`generateKShopQR` จะ throw ถ้าขาดตัวใดตัวหนึ่ง
 
 ```js
 const config = {
-  billerId:     '000000000000000', // bank-issued Biller ID    (required)
-  merchantRef:  'KB000000000000',  // bank merchant reference   (required)
-  merchantName: 'MY SHOP',         // tag 59                    (required)
-  merchantCity: 'BANGKOK',         // tag 60                    (required)
-  // Optional — emitted only when provided:
+  billerId:     '000000000000000', // Biller ID จากธนาคาร       (บังคับ)
+  merchantRef:  'KB000000000000',  // merchant reference ของธนาคาร (บังคับ)
+  merchantName: 'MY SHOP',         // tag 59                    (บังคับ)
+  merchantCity: 'BANGKOK',         // tag 60                    (บังคับ)
+  // ไม่บังคับ — จะถูก emit เมื่อระบุค่าเท่านั้น:
   // visaTemplate, mastercardTemplate, unionpayTemplate, cardScheme,
-  // mcc, additionalData, dynamic (default false), innovationSubId (default '004'),
-  // innovationAid (tag 31 AID — default KShop value; see below)
+  // mcc, additionalData, dynamic (ค่าเริ่มต้น false), innovationSubId (ค่าเริ่มต้น '004'),
+  // innovationAid (tag 31 AID — ค่าเริ่มต้นแบบ KShop; ดูด้านล่าง)
 };
 
-generateKShopQR(100, 'ORDER0000000001', config);                       // static  (POI '11') — default
+generateKShopQR(100, 'ORDER0000000001', config);                       // static  (POI '11') — ค่าเริ่มต้น
 generateKShopQR(100, 'ORDER0000000001', { ...config, dynamic: true }); // dynamic (POI '12')
 ```
 
-`amount` (1st arg) and `reference` (2nd arg — the per-order ref placed in tag
-30/03 and 31/04) vary per call. Structural defaults (`dynamic: false`,
-`currency: '764'`, `countryCode: 'TH'`, `innovationSubId: '004'`) live in
-`KSHOP_DEFAULTS`; the required fields are listed in `REQUIRED_FIELDS`.
+`amount` (อาร์กิวเมนต์ที่ 1) และ `reference` (อาร์กิวเมนต์ที่ 2 — ref ต่อออเดอร์ที่
+วางใน tag 30/03 และ 31/04) เปลี่ยนได้ตามแต่ละ call ส่วน default เชิงโครงสร้าง
+(`dynamic: false`, `currency: '764'`, `countryCode: 'TH'`,
+`innovationSubId: '004'`) อยู่ใน `KSHOP_DEFAULTS`; รายการ field บังคับอยู่ใน
+`REQUIRED_FIELDS`
 
-> **Tag 31 AID (`innovationAid`).** The Bank of Thailand guideline documents
-> `A000000677012004` for the Payment-Innovation template, but **KBank/KShop QRs
-> in the wild use `A000000677010113`**. The library defaults to the KShop value
-> so real KShop QRs round-trip exactly; pass `innovationAid` to override:
+> **Tag 31 AID (`innovationAid`)** แนวทางของธนาคารกลางไทย (BOT) ระบุ
+> `A000000677012004` สำหรับ Payment-Innovation template แต่ **QR ของ
+> KBank/KShop ที่พบจริงใช้ `A000000677010113`** ไลบรารีจึงใช้ค่าแบบ KShop เป็น
+> ค่าเริ่มต้นเพื่อให้ QR KShop จริง round-trip ได้ตรงเป๊ะ; ส่ง `innovationAid`
+> เพื่อ override ได้:
 >
 > ```js
 > const { generateKShopQR, AID_PAYMENT_INNOVATION_BOT } = require('promptpay-qrcode');
 > generateKShopQR(100, 'ORDER1', { ...config, innovationAid: AID_PAYMENT_INNOVATION_BOT });
 > ```
 >
-> Both AIDs are exported: `AID_PAYMENT_INNOVATION` (KShop, default) and
-> `AID_PAYMENT_INNOVATION_BOT` (BOT). `detach`/`kshopParamsFrom` capture whichever
-> the source QR used.
+> export ทั้งสอง AID: `AID_PAYMENT_INNOVATION` (KShop, ค่าเริ่มต้น) และ
+> `AID_PAYMENT_INNOVATION_BOT` (BOT) ส่วน `detach`/`kshopParamsFrom` จะจับค่าที่
+> QR ต้นทางใช้ไว้
 
-> **Static vs dynamic — bank-app compatibility.** KShop defaults to **static
-> (POI `11`) with the amount included**, because that form is accepted by the
-> widest range of apps — including **K PLUS** and the KShop app. In real-device
-> testing, **dynamic (POI `12`) is rejected by K PLUS** for this merchant QR
-> family (though it works in SCB, KTB Next, BBL and UOB). Pass `dynamic: true`
-> only if you specifically target apps that accept POI `12`.
+> **Static vs dynamic — ความเข้ากันได้กับแอปธนาคาร** KShop เริ่มต้นเป็น
+> **static (POI `11`) พร้อมจำนวนเงิน** เพราะรูปแบบนี้ถูกยอมรับโดยแอปจำนวนมาก
+> ที่สุด — รวมถึง **K PLUS** และแอป KShop จากการทดสอบบนเครื่องจริง
+> **dynamic (POI `12`) ถูก K PLUS ปฏิเสธ** สำหรับ QRร้านค้ากลุ่มนี้
+> (แม้จะใช้ได้ใน SCB, KTB Next, BBL และ UOB) ส่ง `dynamic: true`
+> เมื่อคุณตั้งใจเล็งแอปที่รับ POI `12` เป็นกรณีพิเศษเท่านั้น
 
-If you already have a master QR for an account, you can decode it and reuse its
-fields — see [`kshopParamsFrom`](#decoding-a-qr-read-a-master-qr-back) below.
+ถ้าคุณมี master QR ของบัญชีอยู่แล้ว สามารถ decode แล้วนำ field กลับมาใช้ใหม่ —
+ดู [`kshopParamsFrom`](#ถอดข้อมูล-qr-อ่าน-master-qr-กลับ) ด้านล่าง
 
-## Decoding a QR (read a master QR back)
+## ถอดข้อมูล QR (อ่าน master QR กลับ)
 
-`decode(payload)` parses any EMVCo / PromptPay / Thai QR string into structured
-fields and validates the CRC:
+`decode(payload)` parses ข้อความ EMVCo / PromptPay / Thai QR ใด ๆ เป็น field แบบ
+มีโครงสร้างและตรวจสอบ CRC:
 
 ```js
 const { decode } = require('promptpay-qrcode');
 
 const d = decode(masterQrString);
-d.amount;        // 100        (null if none)
+d.amount;        // 100        (null ถ้าไม่มี)
 d.merchantName;  // 'MY SHOP'
 d.poiMethod;     // '12'  (d.static === false)
-d.crc.valid;     // true  -> the QR's checksum is correct
+d.crc.valid;     // true  -> checksum ของ QR ถูกต้อง
 d.fields['30'];  // { '00': 'A000000677010112', '01': '000000000000000', ... }
-d.tags;          // ordered [{ id, length, value }] of the top level
+d.tags;          // ordered [{ id, length, value }] ของระดับบนสุด
 ```
 
-It throws on a malformed payload (a declared length running past the string).
+จะ throw ถ้า payload ผิดรูป (ความยาวที่ประกาศเกินความยาว string)
 
-### Detecting supported payment channels
+### ตรวจจับช่องทางชำระเงินที่รองรับ
 
-A KShop/merchant QR carries a separate template per enrolled payment rail, so an
-omitted template means that channel isn't offered. `channels(qr)` reports them:
+QR KShop/ร้านค้าจะมี template แยกต่อช่องทางชำระเงินที่ลงทะเบียนไว้ ดังนั้นถ้า
+ไม่มี template ใด หมายความว่าช่องทางนั้นไม่ได้เปิดให้ใช้ `channels(qr)`
+รายงานช่องทางเหล่านี้:
 
 ```js
 const { channels } = require('promptpay-qrcode');
@@ -161,27 +166,26 @@ const { channels } = require('promptpay-qrcode');
 channels(kshopQr);
 // {
 //   promptpay: true,
-//   creditCard: true,                       // false if the merchant isn't card-enabled
+//   creditCard: true,                       // false หากร้านค้าไม่รับบัตรเครดิต
 //   networks: ['visa', 'mastercard', 'unionpay'],
 //   promptpayTemplates: ['30', '31'],
 //   cardTemplates: ['02', '04', '15', '51'],
 // }
 ```
 
-So a KShop account configured **without** credit-card acceptance produces a QR
-with no card templates, and `channels()` returns `creditCard: false`,
-`networks: []`. PromptPay rails are detected from tags `29`/`30`/`31`; card
-networks from the EMVCo template ranges (`02`–`16`) and from card RIDs in the
-generic `26`–`51` range. `detach(qr)` also includes this under `.channels`.
+ดังนั้นบัญชี KShop ที่ตั้งค่า **โดยไม่** รับบัตรเครดิต จะให้ QR ที่ไม่มี card
+template และ `channels()` จะคืนค่า `creditCard: false`, `networks: []`
+ฝั่ง PromptPay ตรวจจับจาก tag `29`/`30`/`31`; เครือข่ายบัตรเครดิตตรวจจับจากช่วง
+EMVCo template (`02`–`16`) และจาก card RID ในช่วง generic `26`–`51`
+`detach(qr)` ยังรวมข้อมูลนี้ไว้ใต้ `.channels` ด้วย
 
-> This reflects what the merchant has **enrolled** (capability advertised by the
-> QR). Whether a specific card actually authorizes is still the acquirer's call
-> at settlement.
+> ข้อมูลนี้สะท้อนเฉพาะสิ่งที่ร้านค้า **ลงทะเบียนไว้** (capability ที่ QR โฆษณาไว้)
+> ส่วนบัตรใบใดจะอนุมัติได้จริงหรือไม่ต้องแล้วแต่ acquirer ตอน settlement
 
-### Cloning another KShop account from its master QR
+### โคลนบัญชี KShop อื่นจาก master QR ของมัน
 
-`kshopParamsFrom(qr)` pulls out exactly the account-identifying fields you'd
-pass to `generateKShopQR` — so you can mint new QRs for an existing account:
+`kshopParamsFrom(qr)` ดึง field ที่ใช้ระบุตัวตนบัญชีออกมาพอดีกับที่ต้องส่งให้
+`generateKShopQR` — เพื่อให้คุณออก QR ใหม่ของบัญชีที่มีอยู่แล้วได้:
 
 ```js
 const { kshopParamsFrom, generateKShopQR } = require('promptpay-qrcode');
@@ -190,22 +194,22 @@ const params = kshopParamsFrom(masterQr);
 // params = { billerId, merchantRef, merchantName, merchantCity,
 //            additionalData, visaTemplate, mastercardTemplate,
 //            unionpayTemplate, cardScheme, innovationSubId, mcc,
-//            currency, countryCode, dynamic }  (only those present)
+//            currency, countryCode, dynamic }  (เฉพาะที่มีอยู่)
 
-// Generate a fresh QR for that account with your own amount + order ref:
+// สร้าง QR ใหม่ของบัญชีนั้นด้วยจำนวนเงิน + order ref ของคุณเอง:
 const qr = generateKShopQR(250.5, 'ORDER123', params);
 ```
 
-Per-transaction values (`amount`, and the order reference in tag 30/03 & 31/04)
-are **not** included in `params` — you supply those per call. Round-trip is
-exact: `generateKShopQR(amount, ref, kshopParamsFrom(qr))` reproduces the
-original master QR byte-for-byte when given the same amount and ref.
+ค่าต่อรายการ (`amount` และ order reference ใน tag 30/03 & 31/04) จะ **ไม่** อยู่
+ใน `params` — คุณต้องระบุเองในแต่ละ call การ round-trip ตรงเป๊ะ:
+`generateKShopQR(amount, ref, kshopParamsFrom(qr))` จะสร้าง master QR เดิมกลับมา
+ตรงกันทุกไบต์ เมื่อให้ amount และ ref เดิม
 
-### Detaching any master QR (all types)
+### แยก master QR ใดก็ได้ (ทุกประเภท)
 
-`detach(qr)` is the generic version: it auto-detects the QR type and splits it
-into reusable **account** info and the per-transaction values, for **all three**
-families. `kshopParamsFrom` is the KShop-specific case underneath it.
+`detach(qr)` คือเวอร์ชัน generic: ตรวจจับประเภท QR อัตโนมัติแล้วแยกออกเป็น
+ข้อมูล **บัญชี** ที่ใช้ซ้ำได้ และค่าต่อรายการ ใช้ได้กับ **ทั้งสาม**ตระกูล
+ส่วน `kshopParamsFrom` คือกรณีเฉพาะ KShop ที่อยู่ใต้มันอีกที
 
 ```js
 const { detach, generatePromptPay, generateBillPayment, generateKShopQR } = require('promptpay-qrcode');
@@ -213,44 +217,43 @@ const { detach, generatePromptPay, generateBillPayment, generateKShopQR } = requ
 const { type, account, transaction } = detach(masterQr);
 ```
 
-| `type` | `account` (reusable) | `transaction` (per-call) | Regenerate |
+| `type` | `account` (ใช้ซ้ำได้) | `transaction` (ต่อ call) | สร้างใหม่ด้วย |
 | --- | --- | --- | --- |
 | `'promptpay'` | `{ mobile \| nationalId \| ewallet }` | `{ amount, dynamic }` | `generatePromptPay({ ...account, ...transaction })` |
 | `'billpayment'` | `{ billerId, merchantName?, merchantCity? }` | `{ ref1, ref2?, amount, dynamic }` | `generateBillPayment({ ...account, ...transaction })` |
-| `'kshop'` | full KShop config (= `kshopParamsFrom`) | `{ amount, reference }` | `generateKShopQR(transaction.amount, transaction.reference, account)` |
+| `'kshop'` | config KShop เต็ม (= `kshopParamsFrom`) | `{ amount, reference }` | `generateKShopQR(transaction.amount, transaction.reference, account)` |
 
 ```js
-// Example: re-issue a bill-payment QR with a new amount, same account
+// ตัวอย่าง: ออก QR bill payment ใหม่ด้วยจำนวนเงินใหม่ ใช้บัญชีเดิม
 const { account } = detach(masterBillQr);
 const next = generateBillPayment({ ...account, ref1: 'INV2', amount: 75 });
 ```
 
-For PromptPay the mobile proxy is reversed (`0066812345678` → `0812345678`) so
-it round-trips through `generatePromptPay`. `detach` accepts a payload string or
-a prior `decode()` result, and also returns the full `decoded` object.
-`detectType(fields)` is exposed separately if you only need the type.
+ฝั่ง PromptPay mobile proxy จะถูกแปลงกลับ (`0066812345678` → `0812345678`) เพื่อให้
+round-trip ผ่าน `generatePromptPay` ได้ `detach` รับทั้ง payload string หรือผลจาก
+`decode()` ก่อนหน้า และคืนอ็อบเจกต์ `decoded` เต็ม ๆ ด้วย
+หากต้องการแค่ประเภทอย่างเดียว ใช้ `detectType(fields)` ซึ่ง export แยกไว้
 
 ## CLI
 
-A small command-line inspector ships with the package (`promptpay-qr`, or
-`node cli.js` from the repo). It decodes a payload, validates the CRC, and shows
-the detached account/transaction split and a tag dump — all locally, nothing
-leaves your machine.
+มี command-line inspector ขนาดเล็กแนบมากับแพ็กเกจ (`promptpay-qr` หรือ
+`node cli.js` จากใน repo) มัน decode payload, ตรวจสอบ CRC และแสดงการแยก
+account/transaction พร้อม tag dump — ทั้งหมดรันในเครื่อง ไม่มีข้อมูลใดออกจากเครื่องคุณ
 
 ```
-# from the repo
-node cli.js '00020101021130...C9ED'
-npm run decode -- '00020101...'          # via the npm script
+# จากใน repo
+node cli.js '0002010101021130...C9ED'
+npm run decode -- '00020101...'          # ผ่าน npm script
 
-# installed globally (npm i -g promptpay-qrcode)
+# ติดตั้งแบบ global (npm i -g promptpay-qrcode)
 promptpay-qr '00020101...'
 
-# pipe it in, or get raw JSON
+# pipe เข้าไป หรือขอ JSON ดิบ
 echo '00020101...' | promptpay-qr
 promptpay-qr --json '00020101...'
 ```
 
-Example output:
+ตัวอย่าง output:
 
 ```
 Type      : kshop
@@ -270,71 +273,71 @@ Tags:
    ...
 ```
 
-Exit code is `0` for a valid CRC, `1` for an invalid/malformed payload — handy
-in scripts.
+exit code เป็น `0` เมื่อ CRC ถูกต้อง และ `1` เมื่อ payload ผิดรูป/ไม่ถูกต้อง —
+สะดวกสำหรับใช้ในสคริปต์
 
-## Rendering to an image (optional)
+## สร้างเป็นรูปภาพ (ไม่บังคับ)
 
-The core is zero-dependency. To turn a payload into an actual QR image, install
-the optional [`qrcode`](https://www.npmjs.com/package/qrcode) package:
+ส่วนหลักไม่มี dependency ถ้าต้องการแปลง payload เป็นรูปภาพ QR จริง ให้ติดตั้งแพ็กเกจ
+[`qrcode`](https://www.npmjs.com/package/qrcode) แบบไม่บังคับ:
 
 ```
 npm install qrcode
 ```
 
-Then use the built-in helpers — they lazy-load `qrcode` and reject with a clear
-message if it isn't installed:
+จากนั้นใช้ helper ที่มีมา — มันจะ lazy-load `qrcode` และ reject พร้อมข้อความชัดเจน
+ถ้ายังไม่ได้ติดตั้ง:
 
 ```js
 const { generatePromptPay, toFile, toDataURL, toSVG, toBuffer, toTerminal } = require('promptpay-qrcode');
 
 const payload = generatePromptPay({ mobile: '0812345678', amount: 100 });
 
-await toFile('qr.png', payload, { width: 300, margin: 2 }); // PNG file
+await toFile('qr.png', payload, { width: 300, margin: 2 }); // ไฟล์ PNG
 const url = await toDataURL(payload);                        // data:image/png;base64,...
 const svg = await toSVG(payload);                            // SVG markup string
 const buf = await toBuffer(payload);                         // PNG Buffer
-console.log(await toTerminal(payload));                      // scannable QR in the terminal
+console.log(await toTerminal(payload));                      // QR สแกนได้ใน terminal
 ```
 
-The second `options` argument is passed straight through to `qrcode`
-(`width`, `margin`, `color`, `errorCorrectionLevel`, …). See `example-image.js`
-(`npm run example:image`) for a full demo.
+อาร์กิวเมนต์ `options` ตัวที่สองถูกส่งต่อไปยัง `qrcode` ตรง ๆ
+(`width`, `margin`, `color`, `errorCorrectionLevel`, …) ดู `example-image.js`
+(`npm run example:image`) สำหรับเดโมเต็ม
 
 ## API
 
-| Function | Returns |
+| ฟังก์ชัน | คืนค่า |
 | --- | --- |
 | `generatePromptPay({ mobile \| nationalId \| ewallet, amount?, dynamic? })` | payload string |
 | `generateBillPayment({ billerId, ref1, ref2?, amount?, dynamic?, merchantName?, merchantCity?, additionalData?, countryCode? })` | payload string |
 | `generateKShopQR(amount, reference, config)` | payload string |
-| `KSHOP_DEFAULTS` / `REQUIRED_FIELDS` | KShop structural defaults / required field list |
-| `decode(payload)` | structured decode + CRC validation |
-| `parseTLV(payload)` | low-level ordered `[{ id, length, value }]` |
-| `kshopParamsFrom(qr)` | account params to clone a KShop master QR |
-| `detach(qr)` | `{ type, account, transaction, channels, decoded }` for any QR type |
+| `KSHOP_DEFAULTS` / `REQUIRED_FIELDS` | default เชิงโครงสร้าง KShop / รายการ field บังคับ |
+| `decode(payload)` | decode แบบมีโครงสร้าง + ตรวจสอบ CRC |
+| `parseTLV(payload)` | `[{ id, length, value }]` เรียงลำดับระดับต่ำ |
+| `kshopParamsFrom(qr)` | พารามิเตอร์บัญชีสำหรับโคลน master QR ของ KShop |
+| `detach(qr)` | `{ type, account, transaction, channels, decoded }` ของ QR ทุกประเภท |
 | `detectType(fields)` | `'promptpay'` \| `'billpayment'` \| `'kshop'` \| `'unknown'` |
 | `channels(qr)` | `{ promptpay, creditCard, networks, promptpayTemplates, cardTemplates }` |
-| `crc16Ccitt(str)` / `crc16Hex(str)` | CRC16-CCITT (number / 4-char hex) |
-| `formatMobile(str)` | 13-char PromptPay mobile proxy |
-| `toFile(path, payload, opts?)` | `Promise<void>` — write PNG file *(needs `qrcode`)* |
-| `toDataURL(payload, opts?)` | `Promise<string>` — data URL *(needs `qrcode`)* |
-| `toBuffer(payload, opts?)` | `Promise<Buffer>` — PNG buffer *(needs `qrcode`)* |
-| `toSVG(payload, opts?)` | `Promise<string>` — SVG markup *(needs `qrcode`)* |
-| `toTerminal(payload, opts?)` | `Promise<string>` — terminal QR *(needs `qrcode`)* |
+| `crc16Ccitt(str)` / `crc16Hex(str)` | CRC16-CCITT (number / hex 4 ตัวอักษร) |
+| `formatMobile(str)` | mobile proxy PromptPay 13 ตัวอักษร |
+| `toFile(path, payload, opts?)` | `Promise<void>` — เขียนไฟล์ PNG *(ต้อง มี `qrcode`)* |
+| `toDataURL(payload, opts?)` | `Promise<string>` — data URL *(ต้องมี `qrcode`)* |
+| `toBuffer(payload, opts?)` | `Promise<Buffer>` — PNG buffer *(ต้องมี `qrcode`)* |
+| `toSVG(payload, opts?)` | `Promise<string>` — SVG markup *(ต้องมี `qrcode`)* |
+| `toTerminal(payload, opts?)` | `Promise<string>` — QR ใน terminal *(ต้องมี `qrcode`)* |
 
-## Files
+## ไฟล์
 
-- `crc.js` — CRC16-CCITT (0xFFFF init, 0x1021 poly).
-- `promptpay.js` — standard PromptPay (Tag 29) + bill payment (Tag 30) generators.
-- `kshop.js` — KShop generator (configurable, no bundled merchant data).
-- `decode.js` — decode/parse a payload + `kshopParamsFrom` extractor.
-- `image.js` — optional image helpers (lazy-load `qrcode`).
-- `cli.js` — command-line inspector (`promptpay-qr` / `npm run decode`).
-- `index.js` — public entry point.
-- `test.js` — `npm test`. `example.js` — `npm run example`.
-  `example-image.js` — `npm run example:image` (needs `qrcode`).
-- `docs/promptpay-qr-structure.md` — EMVCo / Thai QR tag-structure reference.
+- `crc.js` — CRC16-CCITT (init 0xFFFF, poly 0x1021)
+- `promptpay.js` — ตัวสร้าง PromptPay มาตรฐาน (Tag 29) + bill payment (Tag 30)
+- `kshop.js` — ตัวสร้าง KShop (ปรับตั้งค่าได้ ไม่แนบข้อมูลร้านค้า)
+- `decode.js` — decode/parse payload + ตัวดึง `kshopParamsFrom`
+- `image.js` — helper รูปภาพแบบไม่บังคับ (lazy-load `qrcode`)
+- `cli.js` — command-line inspector (`promptpay-qr` / `npm run decode`)
+- `index.js` — public entry point
+- `test.js` — `npm test` `example.js` — `npm run example`
+  `example-image.js` — `npm run example:image` (ต้องมี `qrcode`)
+- `docs/promptpay-qr-structure.md` — อ้างอิงโครงสร้าง tag EMVCo / Thai QR
 
 ## Tests
 
@@ -342,10 +345,10 @@ The second `options` argument is passed straight through to `qrcode`
 npm test
 ```
 
-Verifies CRC against the `123456789 → 0x29B1` vector, TLV nesting parity, the
-Tag 29 / Tag 30 / KShop structures, decode + CRC validation, and the
-`kshopParamsFrom` → `generateKShopQR` round-trip.
+ตรวจสอบ CRC กับ vector `123456789 → 0x29B1`, ความสมมาตรของการซ้อน TLV,
+โครงสร้าง Tag 29 / Tag 30 / KShop, การ decode + ตรวจสอบ CRC และ
+round-trip จาก `kshopParamsFrom` → `generateKShopQR`
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — ดู [LICENSE](LICENSE)
