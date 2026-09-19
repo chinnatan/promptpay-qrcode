@@ -23,7 +23,10 @@
     "test": "bun test.js",
     "example": "bun example.js",
     "example:image": "bun example-image.js",
-    "decode": "bun cli.js"
+    "decode": "bun cli.js",
+    "typecheck": "tsc -p src-test --noEmit",
+    "build": "tsc -p .",
+    "prepare": "tsc -p ."
   },
   "peerDependencies": {
     "qrcode": "^1.5.0"
@@ -34,7 +37,9 @@
     }
   },
   "devDependencies": {
-    "qrcode": "^1.5.0"
+    "@types/node": "^26.6.2",
+    "qrcode": "^1.5.0",
+    "typescript": "^5"
   },
   "keywords": [
     "promptpay",
