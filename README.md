@@ -1,6 +1,6 @@
 # promptpay-qrcode
 
-ไลบรารี Node.js แบบไม่มี dependency สำหรับสร้าง **payload string ของ QR PromptPay**
+ไลบรารีแบบไม่มี dependency สำหรับรันบน [Bun](https://bun.sh) — ใช้สร้าง **payload string ของ QR PromptPay**
 (ข้อความ EMVCo / Thai QR ที่ต้องเอาไป encode เป็นรูปภาพ QR) มีตัวสร้าง 3 ตัว
 พร้อม decoder:
 
@@ -24,7 +24,7 @@
 ## ติดตั้ง
 
 ```
-npm install promptpay-qrcode
+bun add promptpay-qrcode
 ```
 
 ส่วนหลัก **ไม่มี dependency** ส่วนสร้างรูปภาพใช้ peer dependency แบบไม่บังคับคือ
@@ -237,15 +237,15 @@ round-trip ผ่าน `generatePromptPay` ได้ `detach` รับทั�
 ## CLI
 
 มี command-line inspector ขนาดเล็กแนบมากับแพ็กเกจ (`promptpay-qr` หรือ
-`node cli.js` จากใน repo) มัน decode payload, ตรวจสอบ CRC และแสดงการแยก
+`bun cli.js` จากใน repo) มัน decode payload, ตรวจสอบ CRC และแสดงการแยก
 account/transaction พร้อม tag dump — ทั้งหมดรันในเครื่อง ไม่มีข้อมูลใดออกจากเครื่องคุณ
 
 ```
 # จากใน repo
-node cli.js '0002010101021130...C9ED'
-npm run decode -- '00020101...'          # ผ่าน npm script
+bun cli.js '0002010101021130...C9ED'
+bun run decode -- '00020101...'           # ผ่าน bun script
 
-# ติดตั้งแบบ global (npm i -g promptpay-qrcode)
+# ติดตั้งแบบ global (bun add -g promptpay-qrcode)
 promptpay-qr '00020101...'
 
 # pipe เข้าไป หรือขอ JSON ดิบ
@@ -282,7 +282,7 @@ exit code เป็น `0` เมื่อ CRC ถูกต้อง และ `
 [`qrcode`](https://www.npmjs.com/package/qrcode) แบบไม่บังคับ:
 
 ```
-npm install qrcode
+bun add qrcode
 ```
 
 จากนั้นใช้ helper ที่มีมา — มันจะ lazy-load `qrcode` และ reject พร้อมข้อความชัดเจน
@@ -302,7 +302,7 @@ console.log(await toTerminal(payload));                      // QR สแกน�
 
 อาร์กิวเมนต์ `options` ตัวที่สองถูกส่งต่อไปยัง `qrcode` ตรง ๆ
 (`width`, `margin`, `color`, `errorCorrectionLevel`, …) ดู `example-image.js`
-(`npm run example:image`) สำหรับเดโมเต็ม
+(`bun run example:image`) สำหรับเดโมเต็ม
 
 ## API
 
@@ -333,17 +333,20 @@ console.log(await toTerminal(payload));                      // QR สแกน�
 - `kshop.js` — ตัวสร้าง KShop (ปรับตั้งค่าได้ ไม่แนบข้อมูลร้านค้า)
 - `decode.js` — decode/parse payload + ตัวดึง `kshopParamsFrom`
 - `image.js` — helper รูปภาพแบบไม่บังคับ (lazy-load `qrcode`)
-- `cli.js` — command-line inspector (`promptpay-qr` / `npm run decode`)
+- `cli.js` — command-line inspector (`promptpay-qr` / `bun run decode`)
 - `index.js` — public entry point
-- `test.js` — `npm test` `example.js` — `npm run example`
-  `example-image.js` — `npm run example:image` (ต้องมี `qrcode`)
+- `test.js` — `bun test.js` `example.js` — `bun run example`
+  `example-image.js` — `bun run example:image` (ต้องมี `qrcode`)
 - `docs/promptpay-qr-structure.md` — อ้างอิงโครงสร้าง tag EMVCo / Thai QR
 
 ## Tests
 
 ```
-npm test
+bun test.js
 ```
+
+(_อย่าใช้ `bun test` เฉย ๆ — harness ใน repo เป็น `check()` แบบ custom
+ต้องรันตรงเป็นไฟล์ มิฉะนั้น bun จะใช้ test runner ของตัวเองแล้วไม่เจอเคส_)
 
 ตรวจสอบ CRC กับ vector `123456789 → 0x29B1`, ความสมมาตรของการซ้อน TLV,
 โครงสร้าง Tag 29 / Tag 30 / KShop, การ decode + ตรวจสอบ CRC และ

@@ -1,6 +1,6 @@
 {
   "name": "promptpay-qrcode",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "Zero-dependency PromptPay QR payload generator (PromptPay P2P, Tag 30 bill payment / Mae Manee, and KShop)",
   "main": "index.js",
   "type": "commonjs",
@@ -20,10 +20,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test.js",
-    "example": "node example.js",
-    "example:image": "node example-image.js",
-    "decode": "node cli.js"
+    "test": "bun test.js",
+    "example": "bun example.js",
+    "example:image": "bun example-image.js",
+    "decode": "bun cli.js"
   },
   "peerDependencies": {
     "qrcode": "^1.5.0"
@@ -32,6 +32,9 @@
     "qrcode": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.0"
   },
   "keywords": [
     "promptpay",
@@ -47,7 +50,7 @@
     "payment"
   ],
   "engines": {
-    "node": ">=12"
+    "bun": ">=1.0.0"
   },
   "license": "MIT",
   "author": "devhyphenplus <dev.hyphenplus@gmail.com>",

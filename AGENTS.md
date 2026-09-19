@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ไลบรารี Node.js แบบไม่มี dependency ใช้สร้าง payload string ของ QR PromptPay /
+ไลบรารี Bun แบบไม่มี dependency ใช้สร้าง payload string ของ QR PromptPay /
 Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder เป็น CommonJS
 แบบแบน — ไม่มี build, transpile หรือ TypeScript
 
@@ -40,11 +40,12 @@ Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder เป�
 
 ## คำสั่ง (Commands)
 
-- `npm test` → `node test.js` ไม่มี test framework: ใช้ harness แบบ `check(name, fn)`
+- `bun run test` → `bun test.js` ไม่มี test framework: ใช้ harness แบบ `check(name, fn)`
   ที่เขียนเอง พิมพ์ `ok - <name>` เมื่อผ่าน เพิ่มเคสด้วยการเรียก `check(...)`
-- `npm run example` / `npm run example:image` → demo ที่รันได้ (`example:image`
+  (ห้ามใช้ `bun test` เฉย ๆ — จะไปรัน bun test runner แล้วไม่เจอ `check()`)
+- `bun run example` / `bun run example:image` → demo ที่รันได้ (`example:image`
   ต้องมี package `qrcode` แบบ optional)
-- `node cli.js '<payload>'` (หรือ `npm run decode -- '...'`) → ตัวตรวจสอบ decode;
+- `bun cli.js '<payload>'` (หรือ `bun run decode -- '...'`) → ตัวตรวจสอบ decode;
   exit `0` = CRC ถูกต้อง, `1` = CRC ผิดหรือข้อมูลเสียหาย
 - Lint/format/typecheck: ไม่ได้ตั้งค่าไว้
 

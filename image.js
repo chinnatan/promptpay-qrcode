@@ -4,7 +4,7 @@
 // PEER dependency: the core payload generators stay zero-dependency, and
 // `qrcode` is only required the moment one of these functions is called.
 //
-//   npm install qrcode
+//   bun add qrcode
 //
 // All functions take a payload string (from generatePromptPay / generateKShopQR
 // / generateBillPayment) plus an optional `options` object forwarded to the
@@ -19,7 +19,7 @@ function loadQrcode() {
     return require('qrcode');
   } catch (err) {
     throw new Error(
-      "The 'qrcode' package is required for image generation. Install it with: npm install qrcode"
+      "The 'qrcode' package is required for image generation. Install it with: bun add qrcode"
     );
   }
 }
