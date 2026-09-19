@@ -1,8 +1,9 @@
 # AGENTS.md
 
-ไลบรารี Bun แบบไม่มี dependency ใช้สร้าง payload string ของ QR PromptPay /
-Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder เป็น CommonJS
-แบบแบน — ไม่มี build, transpile หรือ TypeScript
+ไลบรารี Bun แบบไม่มี dependency runtime ใช้สร้าง payload string ของ QR
+PromptPay / Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder
+— source เป็น TypeScript (`src/*.ts`) build ด้วย `tsc` เป็น CommonJS +
+`.d.ts` ลง `dist/`
 
 ## กระบวนการทำงานหลัก (ฟีเจอร์, แก้บั๊ก, refactor)
 
@@ -40,20 +41,23 @@ Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder เป�
 
 ## คำสั่ง (Commands)
 
-- `bun run test` → `bun test.js` ไม่มี test framework: ใช้ harness แบบ `check(name, fn)`
-  ที่เขียนเอง พิมพ์ `ok - <name>` เมื่อผ่าน เพิ่มเคสด้วยการเรียก `check(...)`
-  (ห้ามใช้ `bun test` เฉย ๆ — จะไปรัน bun test runner แล้วไม่เจอ `check()`)
+- `bun run test` → `bun src-test/test.ts` ไม่มี test framework: ใช้ harness แบบ
+  `check(name, fn)` ที่เขียนเอง พิมพ์ `ok - <name>` เมื่อผ่าน เพิ่มเคสด้วยการเรียก
+  `check(...)` (ห้ามใช้ `bun test` เฉย ๆ — จะไปรัน bun test runner แล้วไม่เจอ
+  `check()`) และห้ามย้าย test ไปใช้ test runner — bun รัน `.ts` ตรง ๆ ได้ไม่ต้อง build
 - `bun run example` / `bun run example:image` → demo ที่รันได้ (`example:image`
   ต้องมี package `qrcode` แบบ optional)
-- `bun cli.js '<payload>'` (หรือ `bun run decode -- '...'`) → ตัวตรวจสอบ decode;
-  exit `0` = CRC ถูกต้อง, `1` = CRC ผิดหรือข้อมูลเสียหาย
-- Lint/format/typecheck: ไม่ได้ตั้งค่าไว้
+- `bun src/cli.ts '<payload>'` (หรือ `bun run decode -- '...'`) → ตัวตรวจสอบ
+  decode; exit `0` = CRC ถูกต้อง, `1` = CRC ผิดหรือข้อมูลเสียหาย
+- `bun run typecheck` → `tsc -p src-test --noEmit` (strict)
+- `bun run build` / `bun run prepare` → `tsc -p .` emit `dist/` (CJS + `.d.ts`)
+- Lint/format: ไม่ได้ตั้งค่าไว้
 
 ## โครงสร้างและข้อบังคับคงที่ (Structure & invariants)
 
-- `index.js` คือ public surface **export ใหม่ต้องเพิ่มทั้งใน `index.js`
-  และใน array `files` ของ `package.json`** — มีเฉพาะไฟล์ที่ลิสต์ไว้เท่านั้น
-  ที่ถูก ship ขึ้น npm (เช่น `test.js`, `example*.js` ไม่ถูก ship)
+- `src/index.ts` คือ public surface — export ใหม่เพิ่มที่ไฟล์เดียวนี้
+  (tsc emit ลง `dist/` ซึ่งทั้งโฟลเดอร์ถูก ship ตาม array `files` ใน
+  `package.json`; ไม่มี per-file list อีกแล้ว)
 - **กับดัก CRC:** checksum คำนวณจาก payload *รวม* tag header `6304`
   แบบ literal แล้วค่อยต่อท้าย:
   `payload += '6304' + crc16Hex(payload + '6304')` ห้ามลบ `6304` ทิ้ง
@@ -63,9 +67,11 @@ Thai EMVCo (Tag 29, Tag 30 bill payment, KShop) พร้อม decoder เป�
   (tests assert ข้อนี้) ห้ามสลับลำดับ tag ที่ emit ออกมาโดยพลการ
   ลำดับของ bill payment คือ `00,01,30,58,53,[54],[59],[60],[62],63`
   — สังเกตว่า `58` มาก่อน `53`
-- `image.js` ใช้ lazy-require `qrcode` *ภายใน* แต่ละฟังก์ชัน ห้ามใส่
-  `require('qrcode')` ระดับ top-level — จะทำให้การติดตั้งแบบ
-  zero-dependency พัง
+- `golden.json` คือ baseline payload จาก JS ก่อนย้ายเป็น TypeScript
+  (ตรวจโดย test) — ห้ามแก้ ยกเว้นตั้งใจเปลี่ยน output จริง (major bump)
+- `src/image.ts` ใช้ lazy-require `qrcode` *ภายใน* แต่ละฟังก์ชัน ห้ามเปลี่ยนเป็น
+  `import` ระดับ top-level (tsc จะ hoist เป็น require ตอนโหลด module ทำให้
+  การติดตั้งแบบ zero-dependency พัง)
 - ค่า default ต่างกันตาม generator: `generateKShopQR` default เป็น
   **static (POI `11`)** พร้อม amount; `generatePromptPay`/`generateBillPayment`
   เป็น dynamic (POI `12`) เฉพาะเมื่อระบุ `amount` ค่า `innovationAid`

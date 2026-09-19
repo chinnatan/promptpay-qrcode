@@ -1,10 +1,9 @@
-'use strict';
-
 // Image-generation example. Requires the optional `qrcode` package:
 //   bun add qrcode
-// Run with:  npm run example:image
+// Run with:  bun run example:image
 
-const {
+import { writeFileSync } from 'node:fs';
+import {
   generatePromptPay,
   generateBillPayment,
   generateKShopQR,
@@ -12,7 +11,7 @@ const {
   toDataURL,
   toSVG,
   toTerminal,
-} = require('./index');
+} from '../src';
 
 async function main() {
   // 1. Standard PromptPay -> PNG file
@@ -29,7 +28,7 @@ async function main() {
     merchantCity: 'BANGKOK',
   });
   const svg = await toSVG(bill, { margin: 1 });
-  require('fs').writeFileSync('billpayment.svg', svg);
+  writeFileSync('billpayment.svg', svg);
   console.log('Wrote billpayment.svg');
 
   // 3. KSHOP -> data URL (placeholder account values)

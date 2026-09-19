@@ -1,6 +1,4 @@
-'use strict';
-
-const { generatePromptPay, generateBillPayment, generateKShopQR } = require('./index');
+import { generatePromptPay, generateBillPayment, generateKShopQR } from '../src';
 
 // --- Standard PromptPay (Tag 29) ---
 

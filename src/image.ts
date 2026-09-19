@@ -1,5 +1,3 @@
-'use strict';
-
 // Optional QR-image helpers. These wrap the `qrcode` npm package, which is a
 // PEER dependency: the core payload generators stay zero-dependency, and
 // `qrcode` is only required the moment one of these functions is called.
@@ -10,13 +8,24 @@
 // / generateBillPayment) plus an optional `options` object forwarded to the
 // underlying `qrcode` library (e.g. { width, margin, color, errorCorrectionLevel }).
 
+// Minimal structural type for the lazily-loaded `qrcode` package — `qrcode` is
+// an optional peer, so we must not import it at module level (top-level
+// `import` would compile to a require at load time and break zero-dep installs).
+interface QrcodeLib {
+  toFile(path: string, text: string, opts: Record<string, unknown>): Promise<void>;
+  toDataURL(text: string, opts: Record<string, unknown>): Promise<string>;
+  toBuffer(text: string, opts: Record<string, unknown>): Promise<Buffer>;
+  toString(text: string, opts: Record<string, unknown>): Promise<string>;
+}
+
+export type QrRenderOptions = Record<string, unknown>;
+
 /**
  * Lazily load the `qrcode` package, throwing a helpful error if it's missing.
- * @returns {import('qrcode')}
  */
-function loadQrcode() {
+function loadQrcode(): QrcodeLib {
   try {
-    return require('qrcode');
+    return require('qrcode') as QrcodeLib;
   } catch (err) {
     throw new Error(
       "The 'qrcode' package is required for image generation. Install it with: bun add qrcode"
@@ -29,53 +38,37 @@ function loadQrcode() {
 
 /**
  * Render a payload to a PNG file on disk.
- * @param {string} filePath Destination path (e.g. './qr.png').
- * @param {string} payload  QR payload string.
- * @param {object} [options] Options forwarded to qrcode.toFile.
- * @returns {Promise<void>}
  */
-async function toFile(filePath, payload, options = {}) {
+export async function toFile(filePath: string, payload: string, options: QrRenderOptions = {}): Promise<void> {
   return loadQrcode().toFile(filePath, payload, options);
 }
 
 /**
  * Render a payload to a data URL (PNG by default), e.g. for an <img src>.
- * @param {string} payload QR payload string.
- * @param {object} [options] Options forwarded to qrcode.toDataURL.
- * @returns {Promise<string>} data: URL string.
  */
-async function toDataURL(payload, options = {}) {
+export async function toDataURL(payload: string, options: QrRenderOptions = {}): Promise<string> {
   return loadQrcode().toDataURL(payload, options);
 }
 
 /**
  * Render a payload to a PNG image Buffer.
- * @param {string} payload QR payload string.
- * @param {object} [options] Options forwarded to qrcode.toBuffer.
- * @returns {Promise<Buffer>}
  */
-async function toBuffer(payload, options = {}) {
+export async function toBuffer(payload: string, options: QrRenderOptions = {}): Promise<Buffer> {
   return loadQrcode().toBuffer(payload, Object.assign({ type: 'png' }, options));
 }
 
 /**
  * Render a payload to an SVG string.
- * @param {string} payload QR payload string.
- * @param {object} [options] Options forwarded to qrcode.toString.
- * @returns {Promise<string>} SVG markup.
  */
-async function toSVG(payload, options = {}) {
+export async function toSVG(payload: string, options: QrRenderOptions = {}): Promise<string> {
   return loadQrcode().toString(payload, Object.assign({ type: 'svg' }, options));
 }
 
 /**
  * Render a payload as a scannable QR in the terminal (UTF-8 blocks).
- * @param {string} payload QR payload string.
- * @param {object} [options] Options forwarded to qrcode.toString.
- * @returns {Promise<string>} The terminal-art string (also handy to print).
  */
-async function toTerminal(payload, options = {}) {
+export async function toTerminal(payload: string, options: QrRenderOptions = {}): Promise<string> {
   return loadQrcode().toString(payload, Object.assign({ type: 'terminal', small: true }, options));
 }
 
-module.exports = { toFile, toDataURL, toBuffer, toSVG, toTerminal };
+export const image = { toFile, toDataURL, toBuffer, toSVG, toTerminal };

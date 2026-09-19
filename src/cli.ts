@@ -1,36 +1,35 @@
 #!/usr/bin/env bun
-'use strict';
 
 // Tiny CLI to inspect a PromptPay / Thai QR payload locally.
 //
-//   bun cli.js <payload>          decode + detach a payload string
-//   bun cli.js --json <payload>   print the raw JSON result
-//   echo "<payload>" | bun cli.js read payload from stdin
+//   bun src/cli.ts <payload>        decode + detach a payload string
+//   bun src/cli.ts --json <payload> print the raw JSON result
+//   echo "<payload>" | bun src/cli.ts read payload from stdin
 //
 // Nothing leaves your machine.
 
-const { decode, detach } = require('./index');
+import { readFileSync } from 'fs';
+import { decode, detach, parseTLV } from './index';
 
-function readInput() {
+function readInput(): string {
   const args = process.argv.slice(2).filter((a) => a !== '--json');
   if (args.length) return args.join('').trim();
   // Fall back to stdin (e.g. piped input).
   try {
-    return require('fs').readFileSync(0, 'utf8').trim();
+    return readFileSync(0, 'utf8').trim();
   } catch (_) {
     return '';
   }
 }
 
-function tagLine(id, len, value, indent) {
+function tagLine(id: string, len: number, value: string, indent: number): string {
   return `${'  '.repeat(indent)}${id} ${String(len).padStart(2, '0')} ${value}`;
 }
 
 // Pretty-print top-level tags, expanding the nested merchant templates.
-function dumpTags(payload) {
+function dumpTags(payload: string): string {
   const NESTED = new Set(['29', '30', '31', '51', '62']);
-  const { parseTLV } = require('./decode');
-  const lines = [];
+  const lines: string[] = [];
   for (const t of parseTLV(payload)) {
     if (NESTED.has(t.id)) {
       lines.push(tagLine(t.id, t.length, '', 0).trimEnd());
@@ -42,7 +41,7 @@ function dumpTags(payload) {
   return lines.join('\n');
 }
 
-function main() {
+function main(): void {
   const json = process.argv.includes('--json');
   const payload = readInput();
 
@@ -56,7 +55,7 @@ function main() {
     d = decode(payload);
     r = detach(payload);
   } catch (err) {
-    console.error('Error: ' + err.message);
+    console.error('Error: ' + (err as Error).message);
     process.exit(1);
   }
 

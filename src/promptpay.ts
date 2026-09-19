@@ -1,6 +1,4 @@
-'use strict';
-
-const { crc16Hex } = require('./crc');
+import { crc16Hex } from './crc';
 
 // Application IDs (AID) for PromptPay.
 const AID_PERSON = 'A000000677010111'; // credit transfer (mobile, national id, ewallet) -> tag 29
@@ -9,13 +7,44 @@ const AID_BILLPAY = 'A000000677010112'; // bill payment (domestic biller) -> tag
 const CURRENCY_THB = '764';
 const COUNTRY_TH = 'TH';
 
+export interface PromptPayConfig {
+  /** Thai mobile number (any format). */
+  mobile?: string;
+  /** 13-digit national ID / tax ID. */
+  nationalId?: string;
+  /** 15-digit e-Wallet ID. */
+  ewallet?: string;
+  /** Optional amount in THB. */
+  amount?: number | string | null;
+  /** Force POI: true='12', false='11'. Auto if omitted. */
+  dynamic?: boolean;
+}
+
+export interface BillPaymentConfig {
+  /** Bank-issued Biller ID (usually 15 digits: 13-digit tax ID + 2-digit suffix). */
+  billerId?: string;
+  /** Reference 1 (mandatory, biller-defined). */
+  ref1?: string;
+  /** Reference 2 (optional, biller-defined). */
+  ref2?: string;
+  /** Amount in THB. Present => dynamic by default. */
+  amount?: number | string | null;
+  /** Force POI: true='12', false='11'. Auto if omitted. */
+  dynamic?: boolean;
+  /** Merchant name (tag 59). */
+  merchantName?: string;
+  /** Merchant city (tag 60). */
+  merchantCity?: string;
+  /** Raw Additional Data Field (tag 62) value, e.g. terminal label sub-TLV "0716...". */
+  additionalData?: string;
+  /** Country code (tag 58). Default 'TH'. */
+  countryCode?: string;
+}
+
 /**
  * Build a single EMVCo TLV field: id (2) + length (2, zero-padded) + value.
- * @param {string} id Two-char tag id.
- * @param {string} value Field value.
- * @returns {string}
  */
-function tlv(id, value) {
+export function tlv(id: string, value: string): string {
   const len = String(value.length).padStart(2, '0');
   return `${id}${len}${value}`;
 }
@@ -31,12 +60,8 @@ function tlv(id, value) {
  *
  * `dynamic` overrides when set (`true` -> '12', `false` -> '11'). When left
  * undefined it defaults to dynamic if an amount is present, static otherwise.
- *
- * @param {boolean|undefined} dynamic Explicit override, or undefined to auto.
- * @param {boolean} hasAmount Whether the payload carries an amount.
- * @returns {'11'|'12'}
  */
-function poiMethod(dynamic, hasAmount) {
+export function poiMethod(dynamic: boolean | undefined, hasAmount: boolean): '11' | '12' {
   if (dynamic === undefined) return hasAmount ? '12' : '11';
   return dynamic ? '12' : '11';
 }
@@ -44,10 +69,8 @@ function poiMethod(dynamic, hasAmount) {
 /**
  * Format a Thai mobile number into the 13-char PromptPay proxy value.
  * e.g. "081-234-5678" -> "0066812345678"
- * @param {string} mobile
- * @returns {string}
  */
-function formatMobile(mobile) {
+export function formatMobile(mobile: string): string {
   const digits = String(mobile).replace(/\D/g, '').replace(/^0/, '');
   return ('66' + digits).padStart(13, '0');
 }
@@ -58,16 +81,8 @@ function formatMobile(mobile) {
  * Provide exactly one of: mobile, nationalId, ewallet.
  * By default the QR is dynamic (POI '12') when `amount` is given and static
  * (POI '11') otherwise; pass `dynamic` to force either.
- *
- * @param {object} opts
- * @param {string} [opts.mobile]     Thai mobile number (any format).
- * @param {string} [opts.nationalId] 13-digit national ID / tax ID.
- * @param {string} [opts.ewallet]    15-digit e-Wallet ID.
- * @param {number} [opts.amount]     Optional amount in THB.
- * @param {boolean} [opts.dynamic]   Force POI: true='12', false='11'. Auto if omitted.
- * @returns {string} The EMVCo QR payload including CRC.
  */
-function generatePromptPay({ mobile, nationalId, ewallet, amount, dynamic } = {}) {
+export function generatePromptPay({ mobile, nationalId, ewallet, amount, dynamic }: PromptPayConfig = {}): string {
   const provided = [mobile, nationalId, ewallet].filter((v) => v != null);
   if (provided.length !== 1) {
     throw new Error('Provide exactly one of: mobile, nationalId, ewallet');
@@ -106,27 +121,13 @@ function generatePromptPay({ mobile, nationalId, ewallet, amount, dynamic } = {}
  * แม่มณี (Mae Manee) and other merchant QRs use. The payer's app shows the
  * merchant name (tag 59) rather than a person's name.
  *
- * @param {object} opts
- * @param {string} opts.billerId       Bank-issued Biller ID (usually 15 digits:
- *                                      13-digit tax ID + 2-digit suffix).
- * @param {string} opts.ref1           Reference 1 (mandatory, biller-defined).
- * @param {string} [opts.ref2]         Reference 2 (optional, biller-defined).
- * @param {number} [opts.amount]       Amount in THB. Present => dynamic by default.
- * @param {boolean} [opts.dynamic]     Force POI: true='12', false='11'. Auto if omitted.
- * @param {string} [opts.merchantName] Merchant name (tag 59).
- * @param {string} [opts.merchantCity] Merchant city (tag 60).
- * @param {string} [opts.additionalData] Raw Additional Data Field (tag 62) value,
- *                                       e.g. terminal label sub-TLV "0716...".
- * @param {string} [opts.countryCode]  Country code (tag 58). Default 'TH'.
- * @returns {string} The EMVCo QR payload including CRC.
- *
  * Tag order follows the layout used by real Thai bill-payment QRs (SCB / Mae
  * Manee): `00,01,30,58,53,[54],[59],[60],[62],63` — note `58` precedes `53`.
  * This lets a decoded bill-payment QR round-trip byte-for-byte.
  */
-function generateBillPayment({
+export function generateBillPayment({
   billerId, ref1, ref2, amount, dynamic, merchantName, merchantCity, additionalData, countryCode,
-} = {}) {
+}: BillPaymentConfig = {}): string {
   if (!billerId) throw new Error('billerId is required');
   if (!ref1) throw new Error('ref1 is required');
 
@@ -153,5 +154,3 @@ function generateBillPayment({
   payload += '6304' + crc16Hex(payload + '6304');
   return payload;
 }
-
-module.exports = { generatePromptPay, generateBillPayment, formatMobile, tlv, poiMethod };
