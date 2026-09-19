@@ -20,10 +20,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "bun test.js",
-    "example": "bun example.js",
-    "example:image": "bun example-image.js",
-    "decode": "bun cli.js",
+    "test": "bun src-test/test.ts",
+    "example": "bun src-test/example.ts",
+    "example:image": "bun src-test/example-image.ts",
+    "decode": "bun src/cli.ts",
     "typecheck": "tsc -p src-test --noEmit",
     "build": "tsc -p .",
     "prepare": "tsc -p ."

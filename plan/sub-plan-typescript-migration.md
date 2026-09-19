@@ -14,23 +14,23 @@
 
 ## Phase 1: ตั้งค่า toolchain (ยังไม่แตะโค้ด)
 ### dependencies + scripts
-- [ ] สร้าง branch `feature/typescript-migration` จาก `develop` ตาม git flow
-- [ ] เพิ่ม devDependencies `typescript` + `@types/node` (dev-only ไม่ติดไปกับ package ที่ ship)
-- [ ] เพิ่ม `tsconfig.json`: `module: commonjs`, `declaration: true`, `strict: true`, `rootDir: src`, `outDir: dist`
-- [ ] เพิ่ม scripts: `typecheck` (`tsc --noEmit`), `build` (`tsc`), `prepare` (`tsc` สำหรับ npm publish) และ gitignore `dist/`
+- [x] สร้าง branch `feature/typescript-migration` จาก `develop` ตาม git flow
+- [x] เพิ่ม devDependencies `typescript` + `@types/node` (dev-only ไม่ติดไปกับ package ที่ ship)
+- [x] เพิ่ม `tsconfig.json`: `module: commonjs`, `declaration: true`, `strict: true`, `rootDir: src`, `outDir: dist`
+- [x] เพิ่ม scripts: `typecheck` (`tsc --noEmit`), `build` (`tsc`), `prepare` (`tsc` สำหรับ npm publish) และ gitignore `dist/`
 ### golden baseline
-- [ ] เขียน `golden-capture.js` ชั่วคราว รันโค้ด JS ปัจจุบัน sinh payload ทุก generator (P2P มี/ไม่มี amount, bill payment, KShop) ออกเป็น `golden.json` แล้ว commit ไว้เทียบผลหลังแปลง
+- [x] เขียน `golden-capture.js` ชั่วคราว รันโค้ด JS ปัจจุบัน sinh payload ทุก generator (P2P มี/ไม่มี amount, bill payment, KShop) ออกเป็น `golden.json` แล้ว commit ไว้เทียบผลหลังแปลง
 
 ## Phase 2: แปลง source เป็น TypeScript
 ### โมดูล core (ไม่แตะลำดับ tag / CRC trap)
-- [ ] `src/crc.ts` — แปลงตรงตัว จากระบุ type `string → number → string`
-- [ ] `src/promptpay.ts` — แปลงจาก JSDoc, ใส่ interface `PromptPayConfig` / `BillPaymentConfig`
-- [ ] `src/kshop.ts` — แปลงจาก JSDoc, ใส่ interface `KShopConfig`,คง default `innovationAid` = `A000000677010113`
-- [ ] `src/decode.ts` — แปลง `decode/parseTLV/detach/detectType/channels/kshopParamsFrom` พร้อม return type
+- [x] `src/crc.ts` — แปลงตรงตัว จากระบุ type `string → number → string`
+- [x] `src/promptpay.ts` — แปลงจาก JSDoc, ใส่ interface `PromptPayConfig` / `BillPaymentConfig`
+- [x] `src/kshop.ts` — แปลงจาก JSDoc, ใส่ interface `KShopConfig`,คง default `innovationAid` = `A000000677010113`
+- [x] `src/decode.ts` — แปลง `decode/parseTLV/detach/detectType/channels/kshopParamsFrom` พร้อม return type
 ### โมดูล surface + CLI
-- [ ] `src/image.ts` — คง lazy-require ภายในฟังก์ชัน (ใช้ `createRequire`/inline `require` ไม่ใช่ top-level import), `qrcode` เป็น optional ให้ type แบบ lazy-safe
-- [ ] `src/index.ts` — re-export ให้ชื่อ/หน้า export ตรงกับ `index.js` เดิมทุกตัว
-- [ ] `src/cli.ts` — แปลงคง shebang `#!/usr/bin/env bun` (ผ่านการ compile) และ exit code 0/1 semantics
+- [x] `src/image.ts` — คง lazy-require ภายในฟังก์ชัน (ใช้ `createRequire`/inline `require` ไม่ใช่ top-level import), `qrcode` เป็น optional ให้ type แบบ lazy-safe
+- [x] `src/index.ts` — re-export ให้ชื่อ/หน้า export ตรงกับ `index.js` เดิมทุกตัว
+- [x] `src/cli.ts` — แปลงคง shebang `#!/usr/bin/env bun` (ผ่านการ compile) และ exit code 0/1 semantics
 - [ ] ลบ `.js` ต้นฉบับของไฟล์ที่แปลงแล้ว (contract step — ทำหลัง dist ผ่าน golden เทียบใน Phase 5 เท่านั้น)
 
 ## Phase 3: แปลง test + example
